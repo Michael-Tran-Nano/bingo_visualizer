@@ -22,10 +22,10 @@ class Bingo_tile(pygame.sprite.Sprite):
 
     def check_click(self, mouse):
         if self.rect.collidepoint(mouse):
-            self.drawn_changer()
+            self.drawn_changer(bingo_check=False)
             return True
 
-    def drawn_changer(self, force_click=None):
+    def drawn_changer(self, force_click=None, bingo_check=True):
 
         if force_click is None:
             self.drawn = not self.drawn
@@ -40,7 +40,9 @@ class Bingo_tile(pygame.sprite.Sprite):
         else:
             self.image.set_alpha(255)
             drawn_tiles[self.no-1] = 0
-        print(drawn_tiles)
+        
+        if bingo_check:
+            check_bingo()
    
 def image_click_checker(group):
     for tile in group:
@@ -48,6 +50,28 @@ def image_click_checker(group):
         if collision:
             return True
     return False
+
+def bingo_mode_click_checker():
+    for no, button in enumerate(mode_rects, 1):
+        if button.collidepoint(event.pos):
+            return no
+
+def bingo_mode_button_alpha(bingo_mode):
+    h, v, f = 50, 50, 50
+
+    if bingo_mode == 1:
+        h = 255
+    elif bingo_mode == 2:
+        v = 255
+    elif bingo_mode == 3:
+        f = 255
+
+    horizontal.set_alpha(h)
+    vertical.set_alpha(v)
+    full.set_alpha(f)
+
+def check_bingo():
+    print('checking for bingo')
 
 pygame.init()
 screen = pygame.display.set_mode(size=window_size)
@@ -87,6 +111,7 @@ remove_all = pygame.image.load('graphics/remove_all.png').convert()
 remove_all_rect = remove_all.get_rect(topleft=(3, 3))
 
 direc_y = 175
+
 horizontal = pygame.image.load('graphics/horizontal.png').convert()
 horizontal_rect = horizontal.get_rect(center=(plate_center[0] - box_distance
                                             , plate_center[1]+direc_y))
@@ -96,6 +121,14 @@ vertical_rect = vertical.get_rect(center=(plate_center[0]
 full = pygame.image.load('graphics/full.png').convert()
 full_rect = full.get_rect(center=(plate_center[0] + box_distance
                                             , plate_center[1]+direc_y))
+mode_images = [horizontal, vertical, full]
+mode_rects = [horizontal_rect, vertical_rect, full_rect]
+
+# Bingo mode
+horizontal.set_alpha(50)
+vertical.set_alpha(50)
+full.set_alpha(50)
+bingo_mode = 0
 
 while True:
     for event in pygame.event.get():
@@ -110,14 +143,20 @@ while True:
                     bingo_tile.drawn_changer(force_click=False)
                 for plate_tile in plate_tile_group:
                     plate_tile.drawn_changer(force_click=False)
-            
+
             else:
                 collision = False
 
                 collision = image_click_checker(bingo_tile_group)
 
                 if not collision:
-                    image_click_checker(plate_tile_group)        
+                    collision = image_click_checker(plate_tile_group)
+
+                if not collision:
+                    mode_number = bingo_mode_click_checker()
+                    if mode_number:
+                        bingo_mode = mode_number if (mode_number != bingo_mode) else 0
+                        bingo_mode_button_alpha(bingo_mode)
 
     # Background
     screen.blit(source=background_surface, dest=(0, 0))
