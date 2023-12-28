@@ -83,7 +83,7 @@ def bingo_mode_button_alpha(bingo_mode):
 def check_bingo():
 
     bingo = False
-    
+
     # Surface to draw the lines
     line_surface = pygame.Surface(window_size, pygame.SRCALPHA) 
 
@@ -91,6 +91,7 @@ def check_bingo():
     if bingo_mode == 0:
         return False, line_surface
 
+    # See the tiles on the plate
     obtained = []
     for no, hat in enumerate(numbers, 1):
         if drawn_tiles[hat-1]:
@@ -98,6 +99,7 @@ def check_bingo():
     
     bingo_conditions = bingo_condition_types[bingo_mode-1]
 
+    # Check with the conditions
     for line, bingo_condition in enumerate(bingo_conditions, -1):
         if set(bingo_condition).issubset(set(obtained)):
             bingo = True
@@ -116,7 +118,7 @@ def draw_bingo_line(bingo_mode, line, line_surface):
     if bingo_mode == 1:
         p0, p1 = (x - half_length, y + line*box_distance), (x + half_length, y + line*box_distance)
     elif bingo_mode == 2:
-        p0, p1 = (x + line*box_distance, y - half_length),(x + line*box_distance, y + half_length)
+        p0, p1 = (x + line*box_distance, y - half_length), (x + line*box_distance, y + half_length)
 
     pygame.draw.line(line_surface, (255, 0, 0, 100), p0, p1, width=15)
     return line_surface
