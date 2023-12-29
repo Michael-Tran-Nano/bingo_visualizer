@@ -20,7 +20,7 @@ class Game:
 
         # Tiles
         self.tile_group = pygame.sprite.Group()
-        tile_displace = (3, 135)
+        tile_displace = (30, 30)
         bingo_coordinates = [(tile_displace[0] + 45*x, tile_displace[1] + 45*y)
                       for y in range(7) for x in range(6)]
         for no, coordinates in enumerate(bingo_coordinates, 1):
@@ -43,9 +43,13 @@ class Game:
         # Drawn tiles
         self.drawn_tiles = [False] * 42
 
-        # Remove all
+        # buttons
         self.remove_all = pygame.image.load('graphics/remove_all.png').convert()
-        self.remove_all_rect = self.remove_all.get_rect(topleft=(3, 3))
+        self.remove_all_rect = self.remove_all.get_rect(bottomleft=(3, self.window_size[1] - 3))
+        self.change_plate = pygame.image.load('graphics/change_plate.png').convert()
+        self.change_plate_rect = self.change_plate.get_rect(topleft=(3, 370))
+        self.clear_box = pygame.image.load('graphics/clear_box.png').convert()
+        self.clear_box_rect = self.clear_box.get_rect(topleft=(50 + 220 + 3, 370))
 
         # Mode buttons
         direc_y = 175
@@ -72,6 +76,17 @@ class Game:
         # Bingo graphic
         self.bingo_graphic = pygame.image.load('graphics/bingo.png').convert_alpha()
         self.bingo_graphic_rect = self.bingo_graphic.get_rect(center=self.plate_center)
+
+        # Textbox
+        self.base_font = pygame.font.Font(None, 24) 
+        self.user_text = ''
+        self.input_rect = pygame.Rect(48, 370, 140, 24)
+        self.color_active = pygame.Color((255, 255, 255))  
+        self.color_passive = pygame.Color((155, 155, 155)) 
+        self.box_color = self.color_passive 
+        self.text_box_active = False
+        self.blinker = 0.0
+
     
     def run(self):
 
@@ -87,11 +102,27 @@ class Game:
             self.screen.blit(self.plate_image, self.plate_image_rect)
             self.plate_tile_group.draw(self.screen)
 
+            # Textbox
+            if self.text_box_active:
+                self.blinker += 0.02
+                screen_text = self.user_text + ('|' if int(self.blinker) % 2 else '')
+                self.box_color = self.color_active
+            else:
+                screen_text = self.user_text if self.user_text else "Write bingo numbers here"
+                self.box_color = self.color_passive
+
             # Buttons
             self.screen.blit(self.remove_all, self.remove_all_rect)
+            self.screen.blit(self.change_plate, self.change_plate_rect)
+            self.screen.blit(self.clear_box, self.clear_box_rect)
             self.screen.blit(self.horizontal, self.horizontal_rect)
             self.screen.blit(self.vertical, self.vertical_rect)
             self.screen.blit(self.full, self.full_rect)
+
+            pygame.draw.rect(self.screen, self.box_color, self.input_rect)
+            text_surface = self.base_font.render(screen_text, True, (0, 0, 0))
+            self.screen.blit(text_surface, (self.input_rect.x+5, self.input_rect.y+5))
+            self.input_rect.w = max(220, text_surface.get_width()+10)
 
             if self.bingo_now:
                 self.screen.blit(self.line_surface, (0, 0))
@@ -104,6 +135,25 @@ class Game:
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     
+                    # Clicked on text box?
+                    if self.input_rect.collidepoint(event.pos):
+                        self.text_box_active = True
+                        break
+                    else:
+                        self.text_box_active = False
+
+                    # Change plate?
+                    if self.change_plate_rect.collidepoint(event.pos):
+                        self.text_box_active = True
+                        print('clicked on changed plate')
+                        break
+
+                    # Clear box?
+                    if self.clear_box_rect.collidepoint(event.pos):
+                        self.text_box_active = True
+                        self.user_text = ''
+                        break
+
                     # Remove all?
                     if self.remove_all_rect.collidepoint(event.pos):
                         self.drawn_tiles = [False] * 42
@@ -132,6 +182,14 @@ class Game:
                         bingo_mode_button_alpha(game=self, bingo_mode=self.bingo_mode)
                         self.bingo_now = check_bingo(self)
                         break
+
+                if event.type == pygame.KEYDOWN and self.text_box_active: 
+                    if event.key == pygame.K_BACKSPACE:
+                        self.user_text = self.user_text[:-1]
+                    else:
+                        key = event.unicode
+                        if key.isnumeric() or key == ' ':
+                            self.user_text += key
 
             pygame.display.update()
             self.clock.tick(60)
