@@ -3,6 +3,7 @@ from sys import exit
 
 from scripts.tiles import Tiles, Plate_tiles, tile_collision_checker
 from scripts.bingo_checker import bingo_mode_click_checker, bingo_mode_button_alpha, check_bingo
+from scripts.input_checker import input_checker
 
 class Game:
     def __init__(self):
@@ -26,22 +27,17 @@ class Game:
         for no, coordinates in enumerate(bingo_coordinates, 1):
             self.tile_group.add(Tiles(game=self, no=no, coordinates=coordinates))
 
+        # Drawn tiles
+        self.drawn_tiles = [False] * 42
+
         # Plate
         self.plate_center = (450, 450/2)
         self.plate_image = pygame.image.load('graphics/plate.png').convert()
         self.plate_image_rect = self.plate_image.get_rect(center=self.plate_center)
 
-        # Bingo_plate
-        self.plate_tile_group = pygame.sprite.Group()
-        self.box_distance = 78 + 5
+        # Bingo_plate_tiles
         self.numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-        plate_coordinates = [(self.plate_center[0] + self.box_distance*x, self.plate_center[1] + self.box_distance*y)
-                             for y in [-1, 0, 1] for x in [-1, 0, 1]]
-        for no, coordinates in zip(self.numbers, plate_coordinates):
-            self.plate_tile_group.add(Plate_tiles(game=self, no=no, coordinates=coordinates))
-
-        # Drawn tiles
-        self.drawn_tiles = [False] * 42
+        self.new_plate(self.numbers)        
 
         # buttons
         self.remove_all = pygame.image.load('graphics/remove_all.png').convert()
@@ -78,7 +74,8 @@ class Game:
         self.bingo_graphic_rect = self.bingo_graphic.get_rect(center=self.plate_center)
 
         # Textbox
-        self.base_font = pygame.font.Font(None, 24) 
+        self.base_font = pygame.font.Font(None, 24)
+        self.base_font_small = pygame.font.Font(None, 16) 
         self.user_text = ''
         self.input_rect = pygame.Rect(48, 370, 140, 24)
         self.color_active = pygame.Color((255, 255, 255))  
@@ -86,7 +83,16 @@ class Game:
         self.box_color = self.color_passive 
         self.text_box_active = False
         self.blinker = 0.0
+        self.error_message = ''
 
+    def new_plate(self, numbers):
+        self.plate_tile_group = pygame.sprite.Group()
+        self.box_distance = 78 + 5
+        self.numbers = numbers
+        plate_coordinates = [(self.plate_center[0] + self.box_distance*x, self.plate_center[1] + self.box_distance*y)
+                             for y in [-1, 0, 1] for x in [-1, 0, 1]]
+        for no, coordinates in zip(self.numbers, plate_coordinates):
+            self.plate_tile_group.add(Plate_tiles(game=self, no=no, coordinates=coordinates))
     
     def run(self):
 
@@ -111,6 +117,13 @@ class Game:
                 screen_text = self.user_text if self.user_text else "Write bingo numbers here"
                 self.box_color = self.color_passive
 
+            pygame.draw.rect(self.screen, self.box_color, self.input_rect)
+            text_surface = self.base_font.render(screen_text, True, (0, 0, 0))
+            self.screen.blit(text_surface, (self.input_rect.x+5, self.input_rect.y+5))
+            self.input_rect.w = max(220, text_surface.get_width()+10)
+            text_surface_error = self.base_font_small.render(self.error_message, True, (255, 0, 0))
+            self.screen.blit(text_surface_error, (self.input_rect.x + 5, self.input_rect.y+25))
+
             # Buttons
             self.screen.blit(self.remove_all, self.remove_all_rect)
             self.screen.blit(self.change_plate, self.change_plate_rect)
@@ -118,11 +131,6 @@ class Game:
             self.screen.blit(self.horizontal, self.horizontal_rect)
             self.screen.blit(self.vertical, self.vertical_rect)
             self.screen.blit(self.full, self.full_rect)
-
-            pygame.draw.rect(self.screen, self.box_color, self.input_rect)
-            text_surface = self.base_font.render(screen_text, True, (0, 0, 0))
-            self.screen.blit(text_surface, (self.input_rect.x+5, self.input_rect.y+5))
-            self.input_rect.w = max(220, text_surface.get_width()+10)
 
             if self.bingo_now:
                 self.screen.blit(self.line_surface, (0, 0))
@@ -141,11 +149,17 @@ class Game:
                         break
                     else:
                         self.text_box_active = False
+                        self.error_message = ''
 
                     # Change plate?
                     if self.change_plate_rect.collidepoint(event.pos):
                         self.text_box_active = True
-                        print('clicked on changed plate')
+                        numbers, message = input_checker(self.user_text)
+                        self.error_message = message
+                        if numbers:
+                            self.new_plate(numbers)
+                            self.plate_tile_group.update()
+                            self.bingo_now = check_bingo(self)
                         break
 
                     # Clear box?
