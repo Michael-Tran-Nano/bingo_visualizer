@@ -19,11 +19,15 @@ class Game:
         # Background
         self.background = pygame.image.load('graphics/background.png').convert()
 
+        # Title
+        self.title = pygame.image.load('graphics/title.png').convert_alpha()
+        self.title_rect = self.title.get_rect(midtop=(450, 15))
+
         # Tiles
         self.tile_group = pygame.sprite.Group()
         tile_displace = (30, 30)
         bingo_coordinates = [(tile_displace[0] + 45*x, tile_displace[1] + 45*y)
-                      for y in range(7) for x in range(6)]
+                             for y in range(7) for x in range(6)]
         for no, coordinates in enumerate(bingo_coordinates, 1):
             self.tile_group.add(Tiles(game=self, no=no, coordinates=coordinates))
 
@@ -58,7 +62,6 @@ class Game:
         self.full = pygame.image.load('graphics/full.png').convert()
         self.full_rect = self.full.get_rect(center=(self.plate_center[0] + self.box_distance,
                                                     self.plate_center[1] + direc_y))
-        self.mode_images = [self.horizontal, self.vertical, self.full]
         self.mode_rects = [self.horizontal_rect, self.vertical_rect, self.full_rect]
 
         # Bingo mode
@@ -78,9 +81,6 @@ class Game:
         self.base_font_small = pygame.font.Font(None, 16) 
         self.user_text = ''
         self.input_rect = pygame.Rect(48, 370, 140, 24)
-        self.color_active = pygame.Color((255, 255, 255))  
-        self.color_passive = pygame.Color((155, 155, 155)) 
-        self.box_color = self.color_passive 
         self.text_box_active = False
         self.blinker = 0.0
         self.error_message = ''
@@ -101,6 +101,9 @@ class Game:
             # Background
             self.screen.blit(self.background, dest=(0, 0))
 
+            # Title
+            self.screen.blit(self.title, self.title_rect)
+
             # Bingo tiles
             self.tile_group.draw(self.screen)
 
@@ -112,10 +115,10 @@ class Game:
             if self.text_box_active:
                 self.blinker += 0.02
                 screen_text = self.user_text + ('|' if int(self.blinker) % 2 else '')
-                self.box_color = self.color_active
+                self.box_color = (255, 255, 255)
             else:
                 screen_text = self.user_text if self.user_text else "Write bingo numbers here"
-                self.box_color = self.color_passive
+                self.box_color = (155, 155, 155)
 
             pygame.draw.rect(self.screen, self.box_color, self.input_rect)
             text_surface = self.base_font.render(screen_text, True, (0, 0, 0))
@@ -162,7 +165,7 @@ class Game:
                             self.bingo_now = check_bingo(self)
                         break
 
-                    # Clear box?
+                    # Clear box?a
                     if self.clear_box_rect.collidepoint(event.pos):
                         self.text_box_active = True
                         self.user_text = ''

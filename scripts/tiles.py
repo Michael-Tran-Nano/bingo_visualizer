@@ -22,9 +22,6 @@ class Tiles(pygame.sprite.Sprite):
             alpha_value = 50 if self.drawn else 255
             self.image.set_alpha(alpha_value)
 
-    # def render(self, surf):
-    #     surf.blit(source=self.image, dest=self.coordinates)
-
 class Plate_tiles(Tiles):
     def __init__(self, game, no, coordinates):
         super().__init__(game, no, coordinates)

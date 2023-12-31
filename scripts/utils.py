@@ -1,9 +1,11 @@
-import os
 import pygame
 
-def load_image(path, alpha=False):
+def img_obj(path, pos, alpha=False):
     if alpha:
         img = pygame.image.load(path).convert_alpha()
     else:
         img = pygame.image.load(path).convert()
-    return img
+
+    rect = img.get_rect(**pos)
+
+    return [img, rect]
